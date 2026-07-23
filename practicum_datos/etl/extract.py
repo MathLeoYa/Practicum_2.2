@@ -8,7 +8,7 @@ def extraer_datos_csv(ruta_archivo: str) -> pd.DataFrame:
     
     try:
         
-        # Lectura del CSV o
+        # Lectura del CSV
         df = pd.read_csv(
             ruta_archivo,
             sep=';', 

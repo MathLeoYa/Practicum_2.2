@@ -5,10 +5,10 @@ def limpiar_datos_base(df):
     """
     Realiza la limpieza inicial del dataset AMIE basándose en el análisis exploratorio.
     """
-    # 1. Eliminar las filas fantasma (120,114 filas completamente vacías)
+    # 1. Eliminar las filas fantasma
     df_limpio = df.dropna(how='all').copy()
     
-    # 2. Renombrar columnas al formato del modelo relacional (PostgreSQL)
+    # 2. Renombrar columnas al formato del modelo relacional
     renombres = {
         'ï»¿Anio_lectivo': 'anio_lectivo',
         'Anio_lectivo': 'anio_lectivo',
@@ -33,7 +33,7 @@ def limpiar_datos_base(df):
     df_limpio = df_limpio.rename(columns=renombres)
     df_limpio.columns = [col.lower() for col in df_limpio.columns]
     
-    # 3. Corregir tipos de datos (de float64 a int) tras quitar los nulos
+    # 3. Corregir tipos de datos
     columnas_enteras = [
         'cod_provincia', 'cod_canton', 'total_docentes', 
         'docentes_f', 'docentes_m',
@@ -41,7 +41,7 @@ def limpiar_datos_base(df):
     ]
     for col in columnas_enteras:
         if col in df_limpio.columns:
-            # Llenamos con 0 posibles nulos residuales y convertimos a entero
+            #convertimos a entero
             df_limpio[col] = df_limpio[col].fillna(0).astype(int)
             
     return df_limpio
@@ -56,7 +56,7 @@ def construir_dim_ubicacion(df_limpio):
         'parroquia', 'zona', 'regimen_escolar'
     ]
     
-    # 2. Extraemos los valores únicos (eliminamos duplicados) y reiniciamos el índice
+    # 2. Extraemos los valores únicos  y reiniciamos el índice
     dim_ub = df_limpio[cols_ubicacion].drop_duplicates().reset_index(drop=True)
     
     # 3. Creamos la clave primaria (id_ubicacion) que PostgreSQL espera como 'serial'
@@ -67,8 +67,7 @@ def construir_dim_ubicacion(df_limpio):
 
 def construir_dim_institucion(df_limpio, dim_ub):
     """
-    Construye la tabla dimensional de instituciones resolviendo la relación con dim_ubicacion,
-    y asegurando que se conserve la información más reciente de la institución.
+    Construye la tabla dimensional de instituciones
     """
     llaves_merge = [
         'provincia', 'cod_provincia', 'canton', 'cod_canton',
@@ -112,12 +111,11 @@ def construir_fact_matricula(df_limpio):
     cols_presentes = [col for col in cols_hechos if col in df_limpio.columns]
     fact = df_limpio[cols_presentes].copy()
     
-    # 2. TODO: Calcular ratio_est_docente con manejo de división por cero
-    # Usamos np.where de NumPy: Si total_docentes es mayor a 0, dividimos; si no, ponemos 0 (o NaN)
+    # 2. TODO: Calcular ratio_est_docente 
     fact['ratio_est_docente'] = np.where(
         fact['total_docentes'] > 0,
         round(fact['total_estudiantes'] / fact['total_docentes'], 2),
-        0.0  # Asignamos 0.0 cuando no hay docentes reportados para evitar el error Inf/NaN
+        0.0 
     )
     
     # 3. Creamos la clave primaria (id_matricula) tipo serial
